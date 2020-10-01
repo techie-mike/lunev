@@ -11,20 +11,21 @@
 #include "common.h"
 
 
-void createSpecialNameFile (char name_file[], size_t num_symbols);
-long lengthOfFile (FILE* file);
-void checkOpenFile (FILE* file);
+void createSpecialNameFile (char name_file[]);
+long lengthOfFile (int file);
+void checkOpenFile (int file);
+
 
 int main (int argc, char *argv[]) {
+    if (argc != 2) {
+        printf ("Didn't give name of file!");
+        exit (EXIT_FAILURE);
+    }
 
-    // if (argc != 2) {
-    //     fprintf(stderr, "Didn't give name of file!");
-    //     exit(EXIT_FAILURE);
-    // }
+    // Number "fifo" and 33 bytes
+    char name_file[37] = {};
 
-    char name_file[11] = {};
-
-    createSpecialNameFile (name_file, 10);
+    createSpecialNameFile (name_file);
 
     fprintf (stdout, "%s\n", name_file);
 
@@ -33,25 +34,33 @@ int main (int argc, char *argv[]) {
         exit (1);
     }
 
-    // for (int i = 0; i < 1000000; i++);
-
-
-    // write (stdout, "UVBHVECVHN", 11)
-    // for (int i = 0; i < 9000000; i++);
 
     int file_fifo = open (name_file, O_WRONLY);
     checkOpenFile (file_fifo);
 
     struct Message message = {};
 
-    FILE* file_with_text = fopen (argv[1], "rb");
+    int file_with_text = open (argv[1], O_RDONLY);
     checkOpenFile (file_with_text);
 
-    long num_message = lengthOfFile (file_with_text) / NUM_BYTES_DATA;
+
+    long length_of_file = lengthOfFile (file_with_text);
+
+    fprintf (stdout, "Length file %ld\n", length_of_file);
+    
+
+    if (length_of_file == -1) {
+        printf ("Error in stat!\n");
+        close (file_fifo);
+        close (file_with_text);
+        exit (EXIT_FAILURE);
+    }
+
+    long num_message = length_of_file / NUM_BYTES_DATA;
 
     fprintf (stderr, "num_message: %li\n", num_message + 1);
     for (size_t i = 0; i <= num_message; i++) {
-        size_t num_read = fread (message.data, sizeof(char),  NUM_BYTES_DATA, file_with_text);
+        size_t num_read = read (file_with_text, message.data,  NUM_BYTES_DATA);
         
         if (num_read == 0)
             break;
@@ -61,41 +70,35 @@ int main (int argc, char *argv[]) {
         message.packege_number = i;
         message.serial_number = 1;
 
-        write (file_fifo, &message, sizeof(message));
+        if (write (file_fifo, &message, sizeof (message)) == -1) {
+            printf ("Error in write!\n");
+            exit (EXIT_FAILURE);
+        }
     }
 
-    fclose (file_with_text);
+    close (file_with_text);
     close (file_fifo);
-    remove (name_file);
     return 0;
 }
 
-void createSpecialNameFile (char name_file[], size_t num_symbols) {
-    if (num_symbols != getrandom (name_file, num_symbols, GRND_RANDOM)) {
-        printf ("Error in getrandom\n");
-        exit(1);
-    }
+void createSpecialNameFile (char name_file[]) {
 
-    for (size_t i = 0; i < num_symbols; i++) {
-        if (name_file[i] < 0)
-            name_file[i] = 256 - name_file[i];
-
-        name_file[i] = 'A' + name_file[i] % ('Z' - 'A');
-    }
-    // sprintf (name_file, "%d", key);
-    // printf ("name %s: ", name_file);
+    sprintf (name_file, "fifo%d", 12312/*getpid()*/);
 }
 
-long lengthOfFile (FILE* file) {
-    fseek (file, 0, SEEK_END);
-    long length_of_file = ftell (file);
-    fseek (file, 0, SEEK_SET);
-    return length_of_file;
+long lengthOfFile (int file) {
+    struct stat stat_file = {};
+
+    if (fstat (file, &stat_file) == -1) {
+        return -1;
+    }
+
+    return stat_file.st_size;
 }
 
-void checkOpenFile (FILE* file) {
+void checkOpenFile (int file) {
     if (file == -1) {
         printf ("Error in open!\n");
-        exit(1);
+        exit (EXIT_FAILURE);
     }
 }
