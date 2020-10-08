@@ -12,7 +12,7 @@
 
 
 void createSpecialNameFile (char name_file[]);
-long lengthOfFile (int file);
+long lengthOfFile  (int file);
 void checkOpenFile (int file);
 
 
@@ -46,7 +46,7 @@ int main (int argc, char *argv[]) {
 
     long length_of_file = lengthOfFile (file_with_text);
 
-    fprintf (stdout, "Length file %ld\n", length_of_file);
+    // fprintf (stdout, "Length file %ld\n", length_of_file);
     
 
     if (length_of_file == -1) {
@@ -58,17 +58,17 @@ int main (int argc, char *argv[]) {
 
     long num_message = length_of_file / NUM_BYTES_DATA;
 
-    fprintf (stderr, "num_message: %li\n", num_message + 1);
+    // fprintf (stderr, "num_message: %li\n", num_message + 1);
     for (size_t i = 0; i <= num_message; i++) {
         size_t num_read = read (file_with_text, message.data,  NUM_BYTES_DATA);
         
         if (num_read == 0)
             break;
         
-        message.used_symbols = num_read;
+        message.used_symbols   = num_read;
         message.total_packages = num_message + 1;
         message.packege_number = i;
-        message.serial_number = 1;
+        message.serial_number  = 1;
 
         if (write (file_fifo, &message, sizeof (message)) == -1) {
             printf ("Error in write!\n");
@@ -83,7 +83,7 @@ int main (int argc, char *argv[]) {
 
 void createSpecialNameFile (char name_file[]) {
 
-    sprintf (name_file, "fifo%d", 12312/*getpid()*/);
+    sprintf (name_file, "fifo%d", getpid());
 }
 
 long lengthOfFile (int file) {
