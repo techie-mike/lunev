@@ -14,19 +14,12 @@
 //-------------------------------------------------------------------
 #include "common.h"
 
-// const int   NUMBER_OF_ERRONEOUS_SENDS = 10000;
-const char  SECURITY_KEY              = 6;
-// const char* NAME_COMMON_FIFO          = "/tmp/common_fifo"; 
-
-
-
+const char  SECURITY_KEY = 6;
 //-------------------------------------------------------------------
-int openCommonFifo();
 int openFifoWithCreate (const char* name_fifo, const int flags);
 int openFeedbackFifo   (const char* name_fifo);
 
 void waitFeedbackToFirstConnect (int fifo_to_read,
-                                 int fifo_to_write,
                                  char *received_name_fifo, 
                                  const char *my_name_fifo);
 
@@ -46,20 +39,16 @@ int main (int argv, const char *argc[]) {
 
     int common_fifo = openFifoWithCreate (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK);
 
-    pid_t my_pid = getpid();
-
     char name_public_feedback_fifo[15] = {};
-    sprintf (name_public_feedback_fifo, "fifo%d", my_pid);
+    sprintf (name_public_feedback_fifo, "fifo%d", getpid());
 
     int feedback_fifo = openFifoWithCreate (name_public_feedback_fifo, O_RDONLY | O_NONBLOCK);
-    printf ("Common fifo %d\nSecond fifo %d\n", common_fifo, feedback_fifo);
+    close (common_fifo);
 
     char name_fifo_of_writer[15] = {};
 
-    waitFeedbackToFirstConnect (feedback_fifo, common_fifo,
+    waitFeedbackToFirstConnect (feedback_fifo,
         name_fifo_of_writer, name_public_feedback_fifo);
-
-    printf ("name - %s\n", name_fifo_of_writer);
 
 
     char name_private_feedback_fifo[16] = {};
@@ -71,15 +60,12 @@ int main (int argv, const char *argc[]) {
     int private_fifo_forward = openFifoWithCreate (name_fifo_of_writer,        O_WRONLY | O_NONBLOCK);
     int private_fifo_back    = openFifoWithCreate (name_private_feedback_fifo, O_RDONLY | O_NONBLOCK);
 
-    printf ("First fifo - %d, Second fifo - %d\n", private_fifo_forward, private_fifo_back);
     waitFeedbackToFinishingConnect (private_fifo_back, private_fifo_forward);
-    printf ("end wait\n");
 
     remove (name_public_feedback_fifo);
     close  (feedback_fifo);
     feedback_fifo = 0;
 
-    printf ("some close done\n");
     sendData (private_fifo_back, private_fifo_forward, argc[1]);
     
     close (private_fifo_back);
@@ -88,44 +74,6 @@ int main (int argv, const char *argc[]) {
     remove (name_fifo_of_writer);
     
     return 0;
-}
-
-/*
-int openCommonFifo() {
-    int file = open (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK);
-    if (file == -1) {
-        if (errno == ENOENT) {
-            if (mkfifo (NAME_COMMON_FIFO, 0666)) {
-                perror ("Error in mkfifo");
-                exit (EXIT_FAILURE);
-            }
-            errno = 0;
-            
-            file = open (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK);
-
-            if (file == -1 && errno == ENOENT) {
-                perror ("Can't create and open file");
-                exit (EXIT_FAILURE);
-            }
-        }
-
-        if (errno == ENXIO) {
-            while (open (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK) == -1 && errno == ENXIO)
-                printf ("Try open common fifo. Wait reader.\n");
-            errno = 0;
-        }
-
-        if (errno != 0) {
-            perror ("Error in open common fifo");
-            exit (EXIT_FAILURE);
-        }
-    }
-    return file;
-}
-*/
-
-int openCommonFifo() {
-    return openFifoWithCreate (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK);
 }
 
 
@@ -149,12 +97,7 @@ int openFifoWithCreate (const char* name_fifo, const int flags) {
             }
         }
 
-        if (errno == ENXIO) {
-            while ((file = open (name_fifo, flags)) == -1 && errno == ENXIO);
-            errno = 0;
-            fprintf (stderr, "Open on write!\n");
-        }
-
+        errno = 0;
         if (errno != 0) {
             printf ("In \"%s\". ", name_fifo);
             perror ("Error in open fifo");
@@ -168,17 +111,18 @@ int openFeedbackFifo (const char* name_fifo) {
     return openFifoWithCreate (name_fifo, O_RDONLY | O_NONBLOCK);
 }
 
-void waitFeedbackToFirstConnect (int fifo_to_read, int fifo_to_write,
+void waitFeedbackToFirstConnect (int fifo_to_read,
         char *received_name_fifo, const char *my_name_fifo) {
-    // int buffer;
-    printf ("start feedback\n");
     for (size_t i = NUMBER_OF_ERRONEOUS_SENDS; 1; i++) {
         if (i == NUMBER_OF_ERRONEOUS_SENDS) { 
             i = 0;
-            write (fifo_to_write, my_name_fifo, 15);
-            // printf ("descriptor %d\n", fifo_to_write)
-            // perror ("");
 
+            int common_fifo = open (NAME_COMMON_FIFO, O_WRONLY | O_NONBLOCK);
+            if (common_fifo != -1) {
+                write (common_fifo, my_name_fifo, 15);
+            }
+
+            close (common_fifo);
             // If write return error it doesn't matter to us,
             // because if all readers died, this process will be closed through "write".
         }
@@ -201,29 +145,25 @@ void waitFeedbackToFinishingConnect (int fifo_to_read, int fifo_to_write) {
         
         int ret_read = read (fifo_to_read, &buffer, sizeof (char));
         errno = 0;
+                    // printf ("switch key sender\n");
 
         if (ret_read > 0) {
-            printf("p------\n");
             if (buffer != (SECURITY_KEY + 1)) {
                 printf ("Error on private fifo %d!\n", buffer);
                 exit (EXIT_FAILURE);
             }
-            printf ("received key %d\n", buffer);
             return;
         }
     }
 }
 
 void sendData (int fifo_to_read, int fifo_to_write, const char *name_file) {
-    fprintf (stderr, "want open\n");
-
     FILE* file_with_text = fopen (name_file, "rb");
     if (file_with_text == 0) {
         perror (name_file);
         exit (EXIT_FAILURE);
     }
     
-    fprintf (stderr, "open file\n");
     size_t package_number = 1;  // "0" using for "exit" message
     struct Message message = {};
     size_t buffer = 0;
@@ -237,11 +177,8 @@ void sendData (int fifo_to_read, int fifo_to_write, const char *name_file) {
 
 
     for (size_t i = NUMBER_OF_ERRONEOUS_SENDS; 1; i++) {
-        // if (i == NUMBER_OF_ERRONEOUS_SENDS)
-        //     printf ("i = %lu\n", i);
         if (i == NUMBER_OF_ERRONEOUS_SENDS) { 
             i = 0;
-            // printf ("send mes %lu\n", message.package_number);
             write (fifo_to_write, &message, sizeof (message));
         }
         
@@ -256,7 +193,6 @@ void sendData (int fifo_to_read, int fifo_to_write, const char *name_file) {
         }
 
         if (ret_read > 0) {
-            // printf ("read %lu\n", buffer);
             if (buffer == package_number) {
                 package_number++;
                 if (uploadText (file_with_text, &message, package_number) == -1) {
@@ -269,14 +205,10 @@ void sendData (int fifo_to_read, int fifo_to_write, const char *name_file) {
                         break;
                     }
                 } 
-                else {
-                    printf ("upload data pack_num %lu\n", package_number);
-                }
             }
             
             
             i = NUMBER_OF_ERRONEOUS_SENDS - 1; // Because for() will do i++.
-            // printf ("package_number %lu\n", package_number);
         }
     }
     fclose (file_with_text);

@@ -1,7 +1,7 @@
 struct Message {
     size_t  package_number;
     size_t  used_symbols;
-    char    data[10];
+    char    data[16];
 };
 
 const char* NAME_COMMON_FIFO          = "/tmp/common_fifo"; 

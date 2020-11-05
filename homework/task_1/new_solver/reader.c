@@ -26,33 +26,24 @@ int main() {
     int common_fifo = openFifo (NAME_COMMON_FIFO, O_RDONLY | O_NONBLOCK);
     char public_name_of_write[15] = {};
     readNameFifo (public_name_of_write, common_fifo);
-    printf ("namefifo %s\n", public_name_of_write);
     //-------------------------------------------------------------------
     int public_writer_fifo = openFifo (public_name_of_write, O_WRONLY | O_NONBLOCK);
     
-    printf ("open public fifo\n");
-
     char name_private_fifo_on_read[15] = {};
     sprintf (name_private_fifo_on_read, "fifo%d", getpid());
 
     char key = 0;
     int private_fifo_on_read = waitConnection (public_writer_fifo, name_private_fifo_on_read, &key);
     // We get fifo for read from it. 
-    printf ("key %d\n", key);
 
     char name_private_fifo_on_write[16] = {};
     memcpy (name_private_fifo_on_write, public_name_of_write, 15);
     name_private_fifo_on_write[14] = '-';
 
     int private_fifo_on_write = openFifoWrite (name_private_fifo_on_write);
-
-    printf ("open fifo write %d\n", private_fifo_on_write);
-
-    // sendKey (key + 1, private_fifo_write);
     
     int ret_value = receivingMessages (private_fifo_on_write, private_fifo_on_read, key + 1);
 
-    // write (file_description, &key, 1);
     close (common_fifo);
     close (public_writer_fifo);
     close (private_fifo_on_read);
@@ -84,9 +75,8 @@ int openFifoWrite (const char* name_fifo) {
         }
 
         if (errno == ENXIO) {
-            while (open (name_fifo, O_WRONLY | O_NONBLOCK) == -1 && errno == ENXIO)
-                printf ("Try open common fifo. Wait reader.\n");
-            errno = 0;
+            while (open (name_fifo, O_WRONLY | O_NONBLOCK) == -1 && errno == ENXIO);
+                errno = 0;
         }
 
         if (errno != 0) {
@@ -128,45 +118,13 @@ int waitConnection (int write_fifo, char* name_fifo, char* key) {
             }
         }
         else {
-            int ret_read = read (ret_open, key, 1);
-            printf ("ret_read %d\n", ret_read);
-            
+            int ret_read = read (ret_open, key, 1);            
             if (ret_read > 0)
                 return ret_open;
         }
         errno = 0;
     }
 }
-
-/*
-void sendKey (char key, int file_description) {
-    
-    for (size_t i = NUMBER_OF_ERRONEOUS_SENDS; 1; i++) {
-        if (i == NUMBER_OF_ERRONEOUS_SENDS) { 
-            i = 0;
-            write (file_description, &key, 1);
-
-            // If write return error it doesn't matter to us,
-            // because if all readers died, this process will be closed through "write".
-        }
-        
-        int ret_read = read (fifo_to_read, received_name_fifo, 15);
-        errno = 0;
-
-        if (ret_read > 0)
-            return;
-    }
-    
-
-
-    int ret_value = write (file_description, &key, 1);
-
-    if (ret_value == -1) {
-        perror ("");
-        exit (EXIT_FAILURE);
-    }
-}
-*/
 
 int receivingMessages (int write_fifo, int read_fifo, char key) {
     bool key_sended = false;
@@ -181,7 +139,6 @@ int receivingMessages (int write_fifo, int read_fifo, char key) {
             }
             else {
                 write (write_fifo, &package_number, sizeof (size_t));
-                printf ("write %lu\n", package_number);
             }
 
             // If write return error it doesn't matter to us,
@@ -198,17 +155,14 @@ int receivingMessages (int write_fifo, int read_fifo, char key) {
 
         if (ret_read > 0) {
             if (package_number != message.package_number) {
-                printf ("received data num pack %lu used %lu\n", message.package_number, message.used_symbols);
                 fwrite (message.data, sizeof (char), message.used_symbols, stderr);
                 package_number = message.package_number;
                 if (message.package_number == 1 && !key_sended) {
-                    // printf ("switch key sender\n");
                     key_sended = true;
                 }
             }
             if (package_number == 0) 
                 return 0;
-            // exit (1);
         }
     }
 }
