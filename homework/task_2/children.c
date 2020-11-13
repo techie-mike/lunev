@@ -27,7 +27,7 @@ int main (int argc, char* argv[])
     }
 
     int N = atoi (argv[1]);
-    key_t key = ftok ("children.c", 0);
+    key_t key = ftok (argv[0], 0);
     
     int fd = msgget (key, IPC_CREAT | 0666);
     if (fd == -1) {
@@ -50,9 +50,9 @@ int main (int argc, char* argv[])
     if (ret == 0)
     {
         receiveMsg (fd, &pack, sizeof (struct msgpack) - sizeof (long), 0, 0);
-        fprintf (stderr, "Data - %d\n", pack.number);
+        fprintf (stderr, "%d\n", pack.number);
         
-        if (pack.number != N - 1)
+        if (pack.number != N)
         {    
             pack.type = 1;
             pack.number += 1;
@@ -72,6 +72,10 @@ int main (int argc, char* argv[])
         pack.type = 1;
         pack.number = 0;
         sendMsg (fd, &pack, sizeof (struct msgpack) - sizeof (long), 0);
+        
+        pack.type = N;
+        receiveMsg (fd, &pack, sizeof (struct msgpack) - sizeof (long), 0, 0);
+        printf ("Parent\n");
     }
 
     return 0;
