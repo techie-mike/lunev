@@ -75,7 +75,7 @@ void deleteResources (int semid, int shmid, const void* private_shrmem)
 
 void checkAnotherProcessAlive (int semid, int shmid, const void* private_shrmem)
 {
-    if (semctl (semid, SEM_ALIVE, GETVAL) != 0)
+    if (semctl (semid, SEM_ALIVE, GETVAL) == 1)
     {
         fprintf (stderr, "\nError, another process died!\n");
         deleteResources (semid, shmid, private_shrmem);

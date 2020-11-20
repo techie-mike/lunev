@@ -126,7 +126,7 @@ int main (int argc, const char* argv[])
         exit (EXIT_FAILURE);
     }
 
-    
+
     //-----------------PRIVATE-----------------------------
 
     //-----------------------------------------------------
@@ -172,8 +172,8 @@ int main (int argc, const char* argv[])
     int ret_read = 0;
     char not_time_to_die = 1;  
 
-    checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
-
+    checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);
+    
     while (1)
     {
         buf.sem_num = SEM_EMPTY;
@@ -186,13 +186,14 @@ int main (int argc, const char* argv[])
         buf.sem_flg = SEM_UNDO;
         semOperator (sem_private_id, &buf, 1); // mutex
 
+        checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
+
         if (not_time_to_die == 0)
         {
             break;
         }
 
 
-        checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
         // Check, that another process alive
 
         //-------------------------------------------------

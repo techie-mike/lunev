@@ -174,7 +174,7 @@ int main ()
     // ALIVE, означающий, что второй процесс умер и первый сам выйдёт с ошибкой
 
 
-    
+
     buf.sem_num = SEM_CONNECT;
     buf.sem_op = 0;
     buf.sem_flg = 0;
@@ -241,6 +241,15 @@ int main ()
         write (STDOUT_FILENO, private_mem->data, private_mem->byte_used);
         last_num_bytes = private_mem->byte_used;
         //-------------------------------------------------
+
+        if (last_num_bytes < SIZE_DATA_PRIVATE_SHR_MEM)
+        {
+            buf.sem_num = SEM_ALIVE;
+            buf.sem_op = 5;
+            buf.sem_flg = 0;
+            semOperator (sem_private_id, &buf, 1);
+            // We said, that transfer was successful
+        }
 
         buf.sem_num = SEM_MUTEX;
         buf.sem_op  = 1;
