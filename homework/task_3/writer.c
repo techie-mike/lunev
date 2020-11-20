@@ -8,8 +8,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
-
 #include <stdio.h>
+
 #include "common.h"
 
 int main (int argc, const char* argv[])
@@ -60,10 +60,10 @@ int main (int argc, const char* argv[])
         buf.sem_op = 1;
         buf.sem_flg = 0;
         semOperator (sem_common_id, &buf, 1);
-
         // It doesn't matter if someone takes possession from us
     }
     //-----------------INIT-SEMAPHORES---------------------
+
 
     //------------------COMMON-MEMORY----------------------
     int common_mem_id = shmget (key, sizeof (int), IPC_CREAT | 0666);
@@ -81,17 +81,17 @@ int main (int argc, const char* argv[])
     }
     //------------------COMMON-MEMORY----------------------
     
+    
     int pid_reader = 0;
     key_t private_key = 0;
     int sem_private_id = 0;
+
     while (1)
     {
         buf.sem_num = SEM_CONNECT;
         buf.sem_op  = -1;
         buf.sem_flg = 0;
-        fprintf (stderr, "Wait access!\n");
         semOperator (sem_common_id, &buf, 1);
-        fprintf (stderr, "Got access!\n%d\n", *common_mem);
 
         pid_reader = *common_mem;
 
@@ -108,8 +108,6 @@ int main (int argc, const char* argv[])
         int val_alive = semctl (sem_private_id, SEM_ALIVE, GETVAL);
         if (val_alive == 1)
         {
-            // fprintf (stderr, "Error, another process died!\n");
-            // exit (EXIT_FAILURE);
             break;
         }
     }
@@ -130,7 +128,6 @@ int main (int argc, const char* argv[])
 
     
     //-----------------PRIVATE-----------------------------
-    // abort();
 
     //-----------------------------------------------------
     //     Сustomization of behavior in case of death
@@ -160,29 +157,25 @@ int main (int argc, const char* argv[])
     //-----------------------------------------------------
     //     Сustomization of behavior in case of death
     //-----------------------------------------------------
+
 
     buf.sem_num = SEM_ALIVE;
     buf.sem_op = -1;
     buf.sem_flg = SEM_UNDO;
     semOperator (sem_private_id, &buf, 1);
+
+    //=====================================================
+    //             The end of ALL initialisation
+    //=====================================================
+
     
     int ret_read = 0;
     char not_time_to_die = 1;  
 
+    checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
+
     while (1)
     {
-        //-------------------------------------------------
-        // Check, that another process alive
-        int val_alive = semctl (sem_private_id, SEM_ALIVE, GETVAL);
-        // fprintf (stderr, "Val = %d\n", val_alive);
-        if (val_alive != 0)
-        {
-            fprintf (stderr, "Error, another process died!\n");
-            exit (EXIT_FAILURE);
-        }
-            
-        //-------------------------------------------------
-
         buf.sem_num = SEM_EMPTY;
         buf.sem_op  = -1;
         buf.sem_flg = 0;
@@ -190,18 +183,20 @@ int main (int argc, const char* argv[])
 
         buf.sem_num = SEM_MUTEX;
         buf.sem_op  = -1;
-        buf.sem_flg = 0;
+        buf.sem_flg = SEM_UNDO;
         semOperator (sem_private_id, &buf, 1); // mutex
-
-
-        //-------------------------------------------------
-        // Load data
 
         if (not_time_to_die == 0)
         {
             break;
         }
 
+
+        checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
+        // Check, that another process alive
+
+        //-------------------------------------------------
+        // Load data
         ret_read = read (fd_text, private_mem->data, SIZE_DATA_PRIVATE_SHR_MEM);
         if (ret_read == -1)
         {
@@ -211,26 +206,27 @@ int main (int argc, const char* argv[])
 
         private_mem->byte_used = ret_read;
         private_mem->last_pack = 0;
-        
         //-------------------------------------------------
 
         buf.sem_num = SEM_MUTEX;
         buf.sem_op  = 1;
-        buf.sem_flg = 0;
+        buf.sem_flg = SEM_UNDO;
         semOperator (sem_private_id, &buf, 1); // mutex
-
-
 
         buf.sem_num = SEM_FULL;
         buf.sem_op  = 1;
         buf.sem_flg = 0;
         semOperator (sem_private_id, &buf, 1); // full
+
         if (ret_read < SIZE_DATA_PRIVATE_SHR_MEM)
         {
             not_time_to_die = 0;
+            // It's need to go out in next turn of the cycle
         }
-
     }
 
-    return 0;
+    deleteResources (sem_private_id, private_mem_id, private_mem);
+    // Delete private SHMMEM and SEMAPHORE
+
+    return EXIT_SUCCESS;
 }

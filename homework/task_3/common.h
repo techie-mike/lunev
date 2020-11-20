@@ -1,7 +1,7 @@
 const char* NAME_COMMON_FILE = "/tmp/common_shr_file"; 
 enum
 {
-    SIZE_DATA_PRIVATE_SHR_MEM = 20
+    SIZE_DATA_PRIVATE_SHR_MEM = 256
 };
 
 enum 
@@ -50,3 +50,36 @@ void createCommonFile ()
     }
     close (fd_common);
 }
+
+void deleteResources (int semid, int shmid, const void* private_shrmem)
+{
+    if (shmdt (private_shrmem) == -1)
+    {
+        perror ("Error in \"deleteResources\" shmctl!\n");
+        exit (EXIT_FAILURE);
+    }
+
+    if (shmctl (shmid, IPC_RMID, NULL) == -1)
+    {
+        perror ("Error in \"deleteResources\" shmctl!\n");
+        exit (EXIT_FAILURE);
+    }
+    
+
+    if (semctl (semid, 0, IPC_RMID) == -1)
+    {
+        perror ("Error in \"deleteResources\" semctl!\n");
+        exit (EXIT_FAILURE);
+    }
+}
+
+void checkAnotherProcessAlive (int semid, int shmid, const void* private_shrmem)
+{
+    if (semctl (semid, SEM_ALIVE, GETVAL) != 0)
+    {
+        fprintf (stderr, "\nError, another process died!\n");
+        deleteResources (semid, shmid, private_shrmem);
+        exit (EXIT_FAILURE);
+    }
+}
+
