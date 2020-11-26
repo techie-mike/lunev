@@ -38,25 +38,28 @@ int main ()
             exit (EXIT_FAILURE);
         }
     }
-    else
-    {
-        buf.sem_num = SEM_COMMON_MUTEX;
-        buf.sem_op = 1;
-        buf.sem_flg = 0;
-        semOperator (sem_common_id, &buf, 1);
 
-        // It doesn't matter if someone takes possession from us
-    }
     //-----------------INIT-SEMAPHORES---------------------
 
+    struct sembuf mutex_buf[2] = {};
 
     //-----------------------------------------------------
     // Get COMMON_MUTEX
-    buf.sem_num = SEM_COMMON_MUTEX;
-    buf.sem_op = -1;
-    buf.sem_flg = SEM_UNDO;
-    semOperator (sem_common_id, &buf, 1);
+
+    mutex_buf[0].sem_num = SEM_COMMON_MUTEX;
+    mutex_buf[0].sem_op  = 0;
+    mutex_buf[0].sem_flg = 0;
+
+    mutex_buf[1].sem_num = SEM_COMMON_MUTEX;
+    mutex_buf[1].sem_op  = 1;
+    mutex_buf[1].sem_flg = SEM_UNDO;
+    
+    semOperator (sem_common_id, mutex_buf, 2);
     //-----------------------------------------------------
+    fprintf (stderr, "I have mutex!\n");
+
+    // TODO Это чёртов колхоз, это надо убрать
+    // через массивы всё переделывается, НЕА :(
     
     union semun sem_union_common = {};
     sem_union_common.val = 0;
@@ -92,15 +95,15 @@ int main ()
     //---------------CREAT-PRIVATE-SEMAPHORE---------------
     int sem_private_id = semget (private_key, 4, IPC_CREAT | IPC_EXCL | 0666);
     //------------------DESCRIPTION------------------------
-    // First  semaphore for mutex
-    // Second semaphore for full
-    // Third  semaphore for empty
-    // Fourth semaphore for state (alive / die)
+    // First semaphore for full
+    // Second semaphore for empty
+    // Third semaphore for state (alive / die)
+    // Fourth SEM_WRITER_INIT
     //------------------DESCRIPTION------------------------
 
 
     union semun sem_union = {};
-    unsigned short array_set[4] = {1, 0, 1, 2};
+    unsigned short array_set[4] = {0, 1, 2, 0};
     sem_union.array = array_set;
     if (semctl (sem_private_id, 0, SETALL, sem_union) == -1)
     {
@@ -158,14 +161,14 @@ int main ()
 
     
     buf.sem_num = SEM_ALIVE;
-    buf.sem_op = -1;
+    buf.sem_op  = -1;
     buf.sem_flg = SEM_UNDO;
     semOperator (sem_private_id, &buf, 1);
     // To check, that process alive
 
     buf.sem_num = SEM_CONNECT;
-    buf.sem_op = 1;
-    buf.sem_flg = 0;
+    buf.sem_op  = 1;
+    buf.sem_flg = SEM_UNDO;
     semOperator (sem_common_id, &buf, 1);
     // State, that data in common shrmem to be
     // Data readiness is set
@@ -174,17 +177,29 @@ int main ()
     // ALIVE, означающий, что второй процесс умер и первый сам выйдёт с ошибкой
 
 
-
-    buf.sem_num = SEM_CONNECT;
-    buf.sem_op = 0;
+// Ниже надо объединить в один массив
+    buf.sem_num = SEM_WRITER_INIT;
+    buf.sem_op  = -1;
     buf.sem_flg = 0;
-    semOperator (sem_common_id, &buf, 1);
+    semOperator (sem_private_id, &buf, 1);
     // There is main wait
 
+    struct sembuf array_buf[2] = {};
+    array_buf[0].sem_num = SEM_CONNECT;
+    array_buf[0].sem_op  = 1;
+    array_buf[0].sem_flg = SEM_UNDO;
+
+    array_buf[1].sem_num = SEM_CONNECT;
+    array_buf[1].sem_op  = -1;
+    array_buf[1].sem_flg = SEM_UNDO;
+    semOperator (sem_common_id, array_buf, 2);
+    // Так мы отключаем возврат SEM_UNDO
     //-----------------------------------------------------
     // Return COMMON_MUTEX
+
+
     buf.sem_num = SEM_COMMON_MUTEX;
-    buf.sem_op = 1;
+    buf.sem_op  = -1;
     buf.sem_flg = SEM_UNDO;
     semOperator (sem_common_id, &buf, 1);
     //-----------------------------------------------------
@@ -193,31 +208,16 @@ int main ()
     //             The end of ALL initialisation
     //=====================================================
 
-
-    buf.sem_num = SEM_ALIVE;
-    buf.sem_op = 0;
-    buf.sem_flg = 0;
-
-    struct timespec wait_time = { 2, 0 };
-    if (semtimedop (sem_private_id, &buf, 1, &wait_time) == -1)
-    {
-        if (errno == EAGAIN)
-        {
-            fprintf (stderr, "Another process die!\n");
-            deleteResources (sem_private_id, private_mem_id, private_mem);
-            exit (EXIT_FAILURE);
-        } 
-    }
-
-    // Now wait, when something try read from memory
-
+// +++++++ Прям всюююю эту фигню надо объединить в один массив +++++
+// Чтобы выполнилось или всё, или ничего
     int last_num_bytes = 0;
 
+    // Это тоже надо убрать !!!
     //-------------------------------------------------
     // Check, that another process alive
     checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);
     //-------------------------------------------------
-    
+
     while (1)
     {
         buf.sem_num = SEM_FULL;
@@ -225,10 +225,10 @@ int main ()
         buf.sem_flg = 0;
         semOperator (sem_private_id, &buf, 1); // full
 
-        buf.sem_num = SEM_MUTEX;
-        buf.sem_op  = -1;
-        buf.sem_flg = SEM_UNDO;
-        semOperator (sem_private_id, &buf, 1); // mutex
+        // buf.sem_num = SEM_MUTEX;
+        // buf.sem_op  = -1;
+        // buf.sem_flg = SEM_UNDO;
+        // semOperator (sem_private_id, &buf, 1); // mutex
 
         //-------------------------------------------------
         // Check, that another process alive
@@ -251,10 +251,10 @@ int main ()
             // We said, that transfer was successful
         }
 
-        buf.sem_num = SEM_MUTEX;
-        buf.sem_op  = 1;
-        buf.sem_flg = SEM_UNDO;
-        semOperator (sem_private_id, &buf, 1); // mutex
+        // buf.sem_num = SEM_MUTEX;
+        // buf.sem_op  = 1;
+        // buf.sem_flg = SEM_UNDO;
+        // semOperator (sem_private_id, &buf, 1); // mutex
 
         buf.sem_num = SEM_EMPTY;
         buf.sem_op  = 1;

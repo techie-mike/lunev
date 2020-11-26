@@ -54,14 +54,7 @@ int main (int argc, const char* argv[])
             exit (EXIT_FAILURE);
         }
     }
-    else
-    {
-        buf.sem_num = SEM_COMMON_MUTEX;
-        buf.sem_op = 1;
-        buf.sem_flg = 0;
-        semOperator (sem_common_id, &buf, 1);
-        // It doesn't matter if someone takes possession from us
-    }
+    
     //-----------------INIT-SEMAPHORES---------------------
 
 
@@ -90,7 +83,7 @@ int main (int argc, const char* argv[])
     {
         buf.sem_num = SEM_CONNECT;
         buf.sem_op  = -1;
-        buf.sem_flg = 0;
+        buf.sem_flg = SEM_UNDO;
         semOperator (sem_common_id, &buf, 1);
 
         pid_reader = *common_mem;
@@ -105,8 +98,8 @@ int main (int argc, const char* argv[])
             exit (EXIT_FAILURE);
         }
 
-        int val_alive = semctl (sem_private_id, SEM_ALIVE, GETVAL);
-        if (val_alive == 1)
+        int val_alive = semctl (sem_private_id, SEM_WRITER_INIT, GETVAL);
+        if (val_alive == 0)
         {
             break;
         }
@@ -133,36 +126,59 @@ int main (int argc, const char* argv[])
     //     Сustomization of behavior in case of death
     //-----------------------------------------------------
 
-    buf.sem_num = SEM_FULL;
-    buf.sem_op = 1;
-    buf.sem_flg = 0;
-    semOperator (sem_private_id, &buf, 1);
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    buf.sem_num = SEM_FULL;
-    buf.sem_op = -1;
-    buf.sem_flg = SEM_UNDO;
-    semOperator (sem_private_id, &buf, 1);
+    struct sembuf array_sem[6] = {};
+
+    array_sem[0].sem_num = SEM_FULL;
+    array_sem[0].sem_op = 1;
+    array_sem[0].sem_flg = 0;
+    // semOperator (sem_private_id, &buf, 1);
+
+    array_sem[1].sem_num = SEM_FULL;
+    array_sem[1].sem_op = -1;
+    array_sem[1].sem_flg = SEM_UNDO;
+    // semOperator (sem_private_id, &buf, 1);
 
     //-----------------------------------------------------
-    buf.sem_num = SEM_EMPTY;
-    buf.sem_op = 1;
-    buf.sem_flg = SEM_UNDO;
-    semOperator (sem_private_id, &buf, 1);
+    array_sem[2].sem_num = SEM_EMPTY;
+    array_sem[2].sem_op = 1;
+    array_sem[2].sem_flg = SEM_UNDO;
+    // semOperator (sem_private_id, &buf, 1);
 
-    buf.sem_num = SEM_EMPTY;
-    buf.sem_op = -1;
-    buf.sem_flg = 0;
-    semOperator (sem_private_id, &buf, 1);
+    array_sem[3].sem_num = SEM_EMPTY;
+    array_sem[3].sem_op = -1;
+    array_sem[3].sem_flg = 0;
+    // semOperator (sem_private_id, &buf, 1);
 
     //-----------------------------------------------------
     //     Сustomization of behavior in case of death
     //-----------------------------------------------------
 
+    
 
-    buf.sem_num = SEM_ALIVE;
-    buf.sem_op = -1;
+    array_sem[4].sem_num = SEM_WRITER_INIT;
+    array_sem[4].sem_op  = 1;
+    array_sem[4].sem_flg = 0;
+    // semOperator (sem_private_id, &buf, 1);
+
+    array_sem[5].sem_num = SEM_ALIVE;
+    array_sem[5].sem_op = -1;
+    array_sem[5].sem_flg = SEM_UNDO;
+    semOperator (sem_private_id, array_sem, 6);
+
+
+    buf.sem_num = SEM_CONNECT;
+    buf.sem_op  = 1;
     buf.sem_flg = SEM_UNDO;
-    semOperator (sem_private_id, &buf, 1);
+    semOperator (sem_common_id, &buf, 1);
+
+    buf.sem_num = SEM_CONNECT;
+    buf.sem_op  = -1;
+    buf.sem_flg = 0;
+    semOperator (sem_common_id, &buf, 1);
+// Плюсы надо запихать в один массив, чтобы было атомарное выполнение
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     //=====================================================
     //             The end of ALL initialisation
@@ -180,11 +196,6 @@ int main (int argc, const char* argv[])
         buf.sem_op  = -1;
         buf.sem_flg = 0;
         semOperator (sem_private_id, &buf, 1); // empty
-
-        buf.sem_num = SEM_MUTEX;
-        buf.sem_op  = -1;
-        buf.sem_flg = SEM_UNDO;
-        semOperator (sem_private_id, &buf, 1); // mutex
 
         checkAnotherProcessAlive (sem_private_id, private_mem_id, private_mem);            
 
@@ -208,11 +219,6 @@ int main (int argc, const char* argv[])
         private_mem->byte_used = ret_read;
         private_mem->last_pack = 0;
         //-------------------------------------------------
-
-        buf.sem_num = SEM_MUTEX;
-        buf.sem_op  = 1;
-        buf.sem_flg = SEM_UNDO;
-        semOperator (sem_private_id, &buf, 1); // mutex
 
         buf.sem_num = SEM_FULL;
         buf.sem_op  = 1;

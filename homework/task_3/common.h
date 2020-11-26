@@ -8,10 +8,10 @@ enum
 {
     SEM_CONNECT = 0,
     SEM_COMMON_MUTEX,
-    SEM_MUTEX   = 0,
-    SEM_FULL,
+    SEM_FULL = 0,
     SEM_EMPTY,
-    SEM_ALIVE
+    SEM_ALIVE,
+    SEM_WRITER_INIT
 };
 
 struct shr_buffer
