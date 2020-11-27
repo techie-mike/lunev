@@ -6,17 +6,18 @@ enum
 
 enum 
 {
+    NUM_SEMS = 6,
     SEM_CONNECT = 0,
-    SEM_COMMON_MUTEX,
-    SEM_FULL = 0,
+    SEM_HAVE_WRITER,
+    SEM_HAVE_READER,
+    SEM_FULL,
     SEM_EMPTY,
-    SEM_ALIVE,
-    SEM_WRITER_INIT
+    SEM_ALIVE
 };
 
 struct shr_buffer
 {
-    char last_pack;
+    char success_end;
     int byte_used;
     char data[SIZE_DATA_PRIVATE_SHR_MEM];
 };
@@ -78,7 +79,7 @@ void checkAnotherProcessAlive (int semid, int shmid, const void* private_shrmem)
     if (semctl (semid, SEM_ALIVE, GETVAL) == 1)
     {
         fprintf (stderr, "\nError, another process died!\n");
-        deleteResources (semid, shmid, private_shrmem);
+        // deleteResources (semid, shmid, private_shrmem);
         exit (EXIT_FAILURE);
     }
 }
