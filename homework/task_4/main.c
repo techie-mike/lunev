@@ -1,5 +1,3 @@
-// #define _POSIX_C_SOURCE
-
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -7,15 +5,11 @@
 
 #include <stdio.h>
 #include <errno.h>
-
-// #include <sys/ipc.h>
 #include <sys/prctl.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #include <sys/wait.h>
-
-
-
 
 #define CHECK(code)             \
     do {                        \
@@ -24,6 +18,7 @@
             exit (EXIT_FAILURE);\
         }                       \
     } while (0)
+
 
 static char received_bit = 0;
 
@@ -66,8 +61,6 @@ int main (int argv, const char* argc[])
             exit (EXIT_FAILURE);
         }
 
-        // fprintf (stderr, "open file\n");
-
         FILE* file = fopen (argc[1], "rb");
         if (file == NULL)
         {
@@ -99,14 +92,10 @@ int main (int argv, const char* argc[])
 
         while (fread (&byte, sizeof (char), 1, file) > 0)
         {
-            // fprintf (stderr, "read bytes\n", byte);
-
             unsigned char bit_mask = 0x80;
-            // fprintf (stderr, "Send byte %x\n", byte);
 
             for (int i = 0; i < 8; i++)
             {
-                // fprintf (stderr, "\t\tSend bit %x\n", bit_mask & byte);
                 if ((bit_mask & byte) == 0)
                     kill (pid_true_parent, SIGUSR1);
                 else
@@ -117,6 +106,7 @@ int main (int argv, const char* argc[])
                 errno = 0;
             }
         }
+        return 0;
     }
     else
     {
@@ -144,7 +134,6 @@ int main (int argv, const char* argc[])
         // For working CTRL + C
         CHECK (sigdelset  (&parent_mask, SIGINT));
 
-        // fprintf (stderr, "in while\n");
         while (1)
         {
             unsigned char finish_byte = 0;
@@ -152,14 +141,12 @@ int main (int argv, const char* argc[])
             {
                 sigsuspend (&parent_mask);
                 errno = 0;
-                // fprintf (stderr, "\tReceive bit %x\n", received_bit);
 
                 finish_byte <<= 1;
                 finish_byte |= received_bit;
 
                 CHECK (kill (child_pid, SIGUSR1));
             }
-            // fprintf (stderr, "Receive byte %x\n", finish_byte);
             CHECK (write (STDOUT_FILENO, &finish_byte, 1));
         }
     }
@@ -170,7 +157,6 @@ void childReceiveBack (int signum)
 {
     return;
 }
-
 
 void parentDie (int signum)
 {
