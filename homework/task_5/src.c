@@ -53,7 +53,7 @@ void mainJobAsServer (struct Connection *connectors, size_t num_children)
         for (size_t i = index_of_finished; i < num_children; i++)
         {
             // Find ready to write
-            if (connectors[i].count < connectors[i].size_buffer)
+            if (connectors[i].count < connectors[i].size_buffer && connectors[i].fd_in != INCORRECT_FD)
             {
                 FD_SET (connectors[i].fd_in, &readfds);
                 if (max_fd < connectors[i].fd_in)
