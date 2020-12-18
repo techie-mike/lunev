@@ -38,13 +38,14 @@ int main (int argc, const char* argv[])
             struct ChildInfo my_info = { fd_child_in[RD_END],
                                          fd_child_out[WR_END] };
 
-
-            // Close previous children
+            //---------------------------------------------
+            // Close previous children's pipes
             for (long k = 0; k < i; k++)
             {
                 CHECK (close (children[k].fd_in));
                 CHECK (close (children[k].fd_out));
             }
+            //---------------------------------------------
 
             if (i == 0)
             {
@@ -106,10 +107,13 @@ int main (int argc, const char* argv[])
     // Main work of parent
     mainJobAsServer (connectors, num_children);
 
+    //-----------------------------------------------------
+    // Free buffer
     for (size_t i = 0; i < num_children; i++)
     {
         free (connectors[i].buffer);
     }
     free (connectors);
+    //-----------------------------------------------------
 }
 

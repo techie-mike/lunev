@@ -75,14 +75,12 @@ void mainJobAsServer (struct Connection *connectors, size_t num_children)
         // Find pipes that ready
         for (size_t i = index_of_finished; i < num_children; i++)
         {
-            if (FD_ISSET (connectors[i].fd_in, &readfds)
-                && (connectors[i].count < connectors[i].size_buffer))
+            if (FD_ISSET (connectors[i].fd_in, &readfds))
             {
                 readToBuffer (&connectors[i]);
             }
 
-            if (FD_ISSET (connectors[i].fd_out, &writefds)
-                && (connectors[i].count != 0))
+            if (FD_ISSET (connectors[i].fd_out, &writefds))
             {
                 writeFromBuffer (&connectors[i]);
             }
@@ -113,7 +111,6 @@ void readToBuffer (struct Connection* conn)
         read_ret = read (conn->fd_in,
                          conn->buffer + conn->tail,
                          conn->head - conn->tail);
-
     }
     else
     {
