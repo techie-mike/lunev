@@ -58,8 +58,12 @@ int searchParentForNewNode (struct BinTree* tree, struct InsertPlace* place,
     int node, int new_data);
 
 int createNode (struct BinTree* tree);
-void fillDefaulValueNodes (struct BinTree* tree, int from, int to);
+void fillDefaulValueNodes (struct BinTree* tree, int from, int num_elem);
 
+int forEachTree (struct BinTree* tree,
+                 void (*consumer)(struct BinTree*, int, void*),
+                 void* data);
 
+void dumpNode (struct BinTree* tree, int index);
 
 #endif
