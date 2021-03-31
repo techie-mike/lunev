@@ -4,31 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define DEFAULT_CAPACITY 10
-#define NO_VALUE -1
-#define LEFT 1
-#define RIGHT 2
-
-
-
-// enum
-// {
-//     default_capacity = 10
-// } tree_constants;
-
-struct Node
-{
-    int data;
-    int left;
-    int right;
-    int parent;
-};
-
-struct InsertPlace
-{
-    int turn;
-    int node;
-};
 
 struct BinTree
 {
@@ -41,35 +16,15 @@ struct BinTree
     int number_increase_capacity;
 };
 
-int initTree (struct BinTree* tree);
+int initTree  (struct BinTree* tree);
 int addInTree (struct BinTree* tree, int data);
-int delTree (struct BinTree* tree);
+int delTree   (struct BinTree* tree);
 int delInTreeByData (struct BinTree* tree, int data);
 
 int changeNumberIncrease (struct BinTree* tree, int new_number);
 
-
-
-// ----------------PRIVARE----------------
-int increaseCapacity (struct BinTree* tree);
-int firstAlloc (struct BinTree* tree);
-
-int searchParentForNewNode (struct BinTree* tree, struct InsertPlace* place,
-    int node, int new_data);
-
-int createNode (struct BinTree* tree);
-void fillDefaulValueNodes (struct BinTree* tree, int from, int num_elem);
-
 int forEachTree (struct BinTree* tree,
                  void (*consumer)(struct BinTree*, int, void*),
                  void* data);
-
-void dumpNode (struct BinTree* tree, int index, void* data);
-
-int searchIndex (struct BinTree* tree, int index, int data);
-int delInTreeByIndex (struct BinTree* tree, int index);
-
-void eraseIndex (struct BinTree* tree, int index);
-
 
 #endif

@@ -71,20 +71,26 @@ void testDel ()
 {
     struct BinTree tree = {};
     delTree (&tree);
+
+    if (delTree (NULL) != -1)
+        PRINT_ERROR;
     TEST_PASSED;
-    // printf ("====PASSED=TEST=DEL====\n");
 }
 
 void testInit ()
 {
     struct BinTree tree;
+
+    int ret = initTree (NULL);
+    if (ret != -1)
+        PRINT_ERROR;
+
     for (int i = 0; i < 50; i++)
     {
         initTree (&tree);
         delTree (&tree);
     }
     TEST_PASSED;
-    // printf ("====PASSED=TEST=INIT====\n");
 }
 
 void testChangeNumberIncrease ()
@@ -106,13 +112,18 @@ void testForEachTree ()
         addInTree (&tree, i);
     }
     addInTree (&tree, -1);
-    forEachTree (&tree, dumpNode, NULL);
+    forEachTree (&tree, emptyFunc, NULL);
     //-----------------------------------------------------
 
     forEachTree (&tree, NULL, NULL);
     forEachTree (NULL, NULL, NULL);
     delTree (&tree);
-    forEachTree (&tree, dumpNode, NULL);
+    forEachTree (&tree, emptyFunc, NULL);
+
+    int ret = addInTree (NULL, 10);
+    if (ret != -1)
+        PRINT_ERROR;
+
     TEST_PASSED;
 }
 
@@ -124,7 +135,6 @@ void testDelInTreeByData ()
     addInTree (&tree, 7);
     addInTree (&tree, 12);
     addInTree (&tree, 11);
-    // forEachTree (&tree, dumpNode, NULL);
 
     int ret = delInTreeByData (&tree, 10);
     if (ret != 0)
@@ -133,7 +143,7 @@ void testDelInTreeByData ()
     ret = delInTreeByData (&tree, 7);
     if (ret != 0)
         PRINT_ERROR;
-    forEachTree (&tree, dumpNode, NULL);
+    forEachTree (&tree, emptyFunc, NULL);
 
 
     ret = delInTreeByData (&tree, 11);
@@ -207,6 +217,3 @@ void testDelInTreeByData ()
 
     TEST_PASSED;
 }
-
-
-
