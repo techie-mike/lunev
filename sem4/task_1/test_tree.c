@@ -22,7 +22,6 @@ void runTest ()
     testChangeNumberIncrease ();
     testForEachTree ();
     testDelInTreeByData ();
-
 }
 
 void testAddInTree ()
@@ -215,5 +214,6 @@ void testDelInTreeByData ()
     if (ret != -1)
         PRINT_ERROR;
 
+    delTree (&tree);
     TEST_PASSED;
 }
