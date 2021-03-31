@@ -44,9 +44,9 @@ struct BinTree
 int initTree (struct BinTree* tree);
 int addInTree (struct BinTree* tree, int data);
 int delTree (struct BinTree* tree);
+int delInTreeByData (struct BinTree* tree, int data);
 
-
-void changeNumberIncrease (int new_number);
+int changeNumberIncrease (struct BinTree* tree, int new_number);
 
 
 
@@ -64,6 +64,12 @@ int forEachTree (struct BinTree* tree,
                  void (*consumer)(struct BinTree*, int, void*),
                  void* data);
 
-void dumpNode (struct BinTree* tree, int index);
+void dumpNode (struct BinTree* tree, int index, void* data);
+
+int searchIndex (struct BinTree* tree, int index, int data);
+int delInTreeByIndex (struct BinTree* tree, int index);
+
+void eraseIndex (struct BinTree* tree, int index);
+
 
 #endif
