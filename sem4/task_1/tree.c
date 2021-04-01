@@ -9,6 +9,16 @@
 #define LEFT 1
 #define RIGHT 2
 
+typedef struct bin_tree
+{
+    struct Node* array_nodes;
+    int capacity;
+    int used;
+    int root;
+    int free_node;
+
+    int number_increase_capacity;
+} BinTree;
 
 struct Node
 {
@@ -68,29 +78,30 @@ void* myRealloc ( void *ptr, size_t new_size )
 
 
 // ------------------------PRIVATE-------------------------
-void goRoundTree (struct BinTree* tree, int index,
-                 void (*consumer)(struct BinTree*, int, void*),
+static void goRoundTree (BinTree* tree, int index,
+                 void (*consumer)(BinTree*, int, void*),
                  void* data);
-int increaseCapacity (struct BinTree* tree);
-int firstAlloc (struct BinTree* tree);
+static int increaseCapacity (BinTree* tree);
+static int firstAlloc (BinTree* tree);
 
-int searchParentForNewNode (struct BinTree* tree, struct InsertPlace* place,
+static int searchParentForNewNode (BinTree* tree, struct InsertPlace* place,
     int node, int new_data);
 
-int createNode (struct BinTree* tree);
-void fillDefaulValueNodes (struct BinTree* tree, int from, int num_elem);
+static int createNode (BinTree* tree);
+static void fillDefaulValueNodes (BinTree* tree, int from, int num_elem);
 
-int searchIndex (struct BinTree* tree, int index, int data);
-int delInTreeByIndex (struct BinTree* tree, int index);
+static int searchIndex (BinTree* tree, int index, int data);
+static int delInTreeByIndex (BinTree* tree, int index);
 
-void eraseIndex (struct BinTree* tree, int index);
+static void eraseIndex (BinTree* tree, int index);
 // ------------------------PRIVATE-------------------------
 
-int initTree (struct BinTree* tree)
+BinTree* createTree ()
 {
+    BinTree* tree = calloc (1, sizeof (BinTree));
     if (tree == NULL)
     {
-        return -1;
+        return NULL;
     }
 
     tree->capacity = 0;
@@ -101,15 +112,16 @@ int initTree (struct BinTree* tree)
     tree->free_node = -1;
     if (firstAlloc (tree) == -1)
     {
-        return -1;
+        free (tree);
+        return NULL;
     }
     else
     {
-        return 0;
+        return tree;
     }
 }
 
-int addInTree (struct BinTree* tree, int new_data)
+int addInTree (BinTree* tree, int new_data)
 {
     if (tree == NULL)
     {
@@ -149,7 +161,7 @@ int addInTree (struct BinTree* tree, int new_data)
     return 0;
 }
 
-int increaseCapacity (struct BinTree* tree)
+static int increaseCapacity (BinTree* tree)
 {
     struct Node* temp_pointer = realloc (tree->array_nodes, 
         (tree->capacity + tree->number_increase_capacity) * sizeof (struct Node));
@@ -168,7 +180,7 @@ int increaseCapacity (struct BinTree* tree)
     }
 }
 
-int firstAlloc (struct BinTree* tree)
+static int firstAlloc (BinTree* tree)
 {
     struct Node* temp_pointer = calloc (DEFAULT_CAPACITY, sizeof (struct Node));
     if (temp_pointer != NULL)
@@ -186,7 +198,7 @@ int firstAlloc (struct BinTree* tree)
     }
 }
 
-int delTree (struct BinTree* tree)
+int delTree (BinTree* tree)
 {
     if (tree == NULL)
     {
@@ -202,10 +214,11 @@ int delTree (struct BinTree* tree)
     tree->capacity = 0;
     tree->used = 0;
     tree->root = NO_VALUE;
+    free (tree);
     return 0;
 }
 
-int searchParentForNewNode (struct BinTree* tree, struct InsertPlace* place,
+static int searchParentForNewNode (BinTree* tree, struct InsertPlace* place,
     int node, int new_data)
 {
     if (tree->array_nodes[node].data > new_data)
@@ -242,7 +255,7 @@ int searchParentForNewNode (struct BinTree* tree, struct InsertPlace* place,
     }
 }
 
-int createNode (struct BinTree* tree)
+static int createNode (BinTree* tree)
 {
     if (tree->capacity == tree->used)
     {
@@ -261,7 +274,7 @@ int createNode (struct BinTree* tree)
     return old_free_node;
 }
 
-void fillDefaulValueNodes (struct BinTree* tree, int from, int num_elem)
+static void fillDefaulValueNodes (BinTree* tree, int from, int num_elem)
 {
     // Filling including start and end number
     struct Node* temp_pointer = tree->array_nodes;
@@ -278,8 +291,8 @@ void fillDefaulValueNodes (struct BinTree* tree, int from, int num_elem)
     return;
 }
 
-void goRoundTree (struct BinTree* tree, int index,
-                 void (*consumer)(struct BinTree*, int, void*),
+static void goRoundTree (BinTree* tree, int index,
+                 void (*consumer)(BinTree*, int, void*),
                  void* data)
 {
     if (tree->array_nodes[index].left != NO_VALUE)
@@ -295,8 +308,8 @@ void goRoundTree (struct BinTree* tree, int index,
     }
 }
 
-int forEachTree (struct BinTree* tree,
-                 void (*consumer)(struct BinTree*, int, void*),
+int forEachTree (BinTree* tree,
+                 void (*consumer)(BinTree*, int, void*),
                  void* data)
 {
     if (tree == NULL)
@@ -321,7 +334,7 @@ int forEachTree (struct BinTree* tree,
 /*
 //-------------------------------------------------------
 // Not for user
-void dumpNode (struct BinTree* tree, int index, void* data)
+void dumpNode (BinTree* tree, int index, void* data)
 {
     if (tree == NULL)
         return;
@@ -335,7 +348,7 @@ void dumpNode (struct BinTree* tree, int index, void* data)
 //---------------------------------------------------------
 */
 
-int changeNumberIncrease (struct BinTree* tree, int new_number)
+int changeNumberIncrease (BinTree* tree, int new_number)
 {
     if (tree == NULL)
     {
@@ -350,7 +363,7 @@ int changeNumberIncrease (struct BinTree* tree, int new_number)
     return 0;
 }
 
-int delInTreeByData (struct BinTree* tree, int data)
+int delInTreeByData (BinTree* tree, int data)
 {
     if (tree == NULL)
     {
@@ -370,7 +383,7 @@ int delInTreeByData (struct BinTree* tree, int data)
     return delInTreeByIndex (tree, index);
 }
 
-int delInTreeByIndex (struct BinTree* tree, int index)
+static int delInTreeByIndex (BinTree* tree, int index)
 {
     if (tree->array_nodes[index].left  == NO_VALUE
      && tree->array_nodes[index].right == NO_VALUE)
@@ -435,7 +448,7 @@ int delInTreeByIndex (struct BinTree* tree, int index)
     return 0;
 }
 
-void eraseIndex (struct BinTree* tree, int index)
+static void eraseIndex (BinTree* tree, int index)
 {
     if (tree->array_nodes[index].parent != NO_VALUE)
     {
@@ -461,7 +474,7 @@ void eraseIndex (struct BinTree* tree, int index)
     tree->used--;
 }
 
-int searchIndex (struct BinTree* tree, int index, int data)
+static int searchIndex (BinTree* tree, int index, int data)
 {
     if (tree->array_nodes[index].data == data)
     {

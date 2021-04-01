@@ -4,7 +4,7 @@
 #include "tree.h"
 
 void runTest ();
-void testInit ();
+void testCreate ();
 void testDel ();
 void testAddInTree ();
 void testChangeNumberIncrease ();

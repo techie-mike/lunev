@@ -3,7 +3,7 @@
 #define PRINT_ERROR \
 do {\
     printf ("\033[31m====ERROR=IN=TEST=%s====\033[0m\n", __FUNCTION__);\
-    delTree (&tree);\
+    delTree (tree);\
     exit (1);\
 } while (0)
 
@@ -16,7 +16,7 @@ do {\
 
 void runTest ()
 {
-    testInit ();
+    testCreate ();
     testDel ();
     testAddInTree ();
     testChangeNumberIncrease ();
@@ -26,15 +26,14 @@ void runTest ()
 
 void testAddInTree ()
 {
-    struct BinTree tree;
-    initTree (&tree);
-    changeNumberIncrease (&tree, 1);
+    BinTree* tree = createTree ();
+    changeNumberIncrease (tree, 1);
 
     int ret = 0;
     //-----------------------------------------------------
     for (int i = 0; i < 10 + 50; i++)
     {
-        ret = addInTree (&tree, 30 - i);
+        ret = addInTree (tree, 30 - i);
         if (ret != 0 && i != 59)
         {
             PRINT_ERROR;
@@ -43,7 +42,7 @@ void testAddInTree ()
     }
 
     //-----------------------------------------------------
-    ret = addInTree (&tree, 30);
+    ret = addInTree (tree, 30);
     if (ret != -1)
     {
         printf ("Wait -1, return %d\n", ret);
@@ -53,7 +52,7 @@ void testAddInTree ()
     //-----------------------------------------------------
     for (int i = 31; i < 33; i++)
     {
-        ret = addInTree (&tree, i);
+        ret = addInTree (tree, i);
 
         if (ret != 0)
         {
@@ -62,62 +61,61 @@ void testAddInTree ()
         }
     }
 
-    delTree (&tree);
+    delTree (tree);
     TEST_PASSED;
 }
 
 void testDel ()
 {
-    struct BinTree tree = {};
-    delTree (&tree);
+    BinTree* tree = NULL;
+    delTree (tree);
 
     if (delTree (NULL) != -1)
         PRINT_ERROR;
     TEST_PASSED;
 }
 
-void testInit ()
+void testCreate ()
 {
-    struct BinTree tree;
+    BinTree* tree = NULL;
 
-    int ret = initTree (NULL);
-    if (ret != -1)
-        PRINT_ERROR;
+    // int ret = createTree (NULL);
+    // if (ret != -1)
+    //     PRINT_ERROR;
 
     for (int i = 0; i < 50; i++)
     {
-        initTree (&tree);
-        delTree (&tree);
+        tree = createTree ();
+        delTree (tree);
     }
     TEST_PASSED;
 }
 
 void testChangeNumberIncrease ()
 {
-    struct BinTree tree;
-    changeNumberIncrease (&tree, 0);
+    BinTree* tree = createTree ();
+    changeNumberIncrease (tree, 0);
     changeNumberIncrease (NULL, 0);
+    delTree (tree);
     TEST_PASSED;
 }
 
-void emptyFunc (struct BinTree* tree, int index, void* data) {}
+void emptyFunc (BinTree* tree, int index, void* data) {}
 
 void testForEachTree ()
 {
-    struct BinTree tree;
-    initTree (&tree);
+    BinTree* tree = createTree ();
     for (int i = 0; i < 2; i++)
     {
-        addInTree (&tree, i);
+        addInTree (tree, i);
     }
-    addInTree (&tree, -1);
-    forEachTree (&tree, emptyFunc, NULL);
+    addInTree (tree, -1);
+    forEachTree (tree, emptyFunc, NULL);
     //-----------------------------------------------------
 
-    forEachTree (&tree, NULL, NULL);
+    forEachTree (tree, NULL, NULL);
     forEachTree (NULL, NULL, NULL);
-    delTree (&tree);
-    forEachTree (&tree, emptyFunc, NULL);
+    delTree (tree);
 
     int ret = addInTree (NULL, 10);
     if (ret != -1)
@@ -128,83 +126,82 @@ void testForEachTree ()
 
 void testDelInTreeByData ()
 {
-    struct BinTree tree;
-    initTree (&tree);
-    addInTree (&tree, 10);
-    addInTree (&tree, 7);
-    addInTree (&tree, 12);
-    addInTree (&tree, 11);
+    BinTree* tree = createTree ();
+    addInTree (tree, 10);
+    addInTree (tree, 7);
+    addInTree (tree, 12);
+    addInTree (tree, 11);
 
-    int ret = delInTreeByData (&tree, 10);
+    int ret = delInTreeByData (tree, 10);
     if (ret != 0)
         PRINT_ERROR;
 
-    ret = delInTreeByData (&tree, 7);
+    ret = delInTreeByData (tree, 7);
     if (ret != 0)
         PRINT_ERROR;
-    forEachTree (&tree, emptyFunc, NULL);
+    forEachTree (tree, emptyFunc, NULL);
 
 
-    ret = delInTreeByData (&tree, 11);
-    if (ret != 0)
-        PRINT_ERROR;
-
-
-    ret = delInTreeByData (&tree, 12);
+    ret = delInTreeByData (tree, 11);
     if (ret != 0)
         PRINT_ERROR;
 
-    addInTree (&tree, 10);
-    addInTree (&tree, 7);
 
-    ret = delInTreeByData (&tree, 10);
+    ret = delInTreeByData (tree, 12);
     if (ret != 0)
         PRINT_ERROR;
 
-    addInTree (&tree, 8);
+    addInTree (tree, 10);
+    addInTree (tree, 7);
 
-    ret = delInTreeByData (&tree, 8);
+    ret = delInTreeByData (tree, 10);
+    if (ret != 0)
+        PRINT_ERROR;
+
+    addInTree (tree, 8);
+
+    ret = delInTreeByData (tree, 8);
     if (ret != 0)
         PRINT_ERROR;
     //----------------------------------------------------
     // Left only 7 in tree
-    ret = delInTreeByData (&tree, 9);
+    ret = delInTreeByData (tree, 9);
     if (ret != -1)
         PRINT_ERROR;
 
-    ret = delInTreeByData (&tree, 7);
+    ret = delInTreeByData (tree, 7);
     if (ret != 0)
         PRINT_ERROR;
     //-----------------------------------------------------
 
-    ret = delInTreeByData (&tree, 8);
+    ret = delInTreeByData (tree, 8);
     if (ret != -1)
         PRINT_ERROR;
 
     //-----------------------------------------------------
 
-    addInTree (&tree, 10);
-    addInTree (&tree, 11);
-    addInTree (&tree, 12);
+    addInTree (tree, 10);
+    addInTree (tree, 11);
+    addInTree (tree, 12);
 
 
-    ret = delInTreeByData (&tree, 11);
+    ret = delInTreeByData (tree, 11);
         if (ret != 0)
             PRINT_ERROR;
 
-    ret = delInTreeByData (&tree, 12);
+    ret = delInTreeByData (tree, 12);
         if (ret != 0)
             PRINT_ERROR;
 
-    addInTree (&tree, 9);
-    addInTree (&tree, 8);
+    addInTree (tree, 9);
+    addInTree (tree, 8);
 
-    ret = delInTreeByData (&tree, 9);
+    ret = delInTreeByData (tree, 9);
         if (ret != 0)
             PRINT_ERROR;
     //-----------------------------------------------------
 
-    ret = delInTreeByData (&tree, 6);
+    ret = delInTreeByData (tree, 6);
         if (ret != -1)
             PRINT_ERROR;
 
@@ -214,6 +211,6 @@ void testDelInTreeByData ()
     if (ret != -1)
         PRINT_ERROR;
 
-    delTree (&tree);
+    delTree (tree);
     TEST_PASSED;
 }
