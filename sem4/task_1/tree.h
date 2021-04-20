@@ -5,17 +5,17 @@
 #include <stdio.h>
 
 
-typedef struct bin_tree BinTree;
+typedef struct bin_tree BinTree_t;
 
-BinTree* createTree  ();
-int addInTree (BinTree* tree, int data);
-int delTree   (BinTree* tree);
-int delInTreeByData (BinTree* tree, int data);
+BinTree_t* createTree  ();
+int addInTree (BinTree_t* tree, int data);
+int delTree   (BinTree_t* tree);
+int delInTreeByData (BinTree_t* tree, int data);
 
-int changeNumberIncrease (BinTree* tree, int new_number);
+int changeNumberIncrease (BinTree_t* tree, int new_number);
 
-int forEachTree (BinTree* tree,
-                 void (*consumer)(BinTree*, int, void*),
+int forEachTree (BinTree_t* tree,
+                 void (*consumer)(BinTree_t*, int, void*),
                  void* data);
 
 #endif

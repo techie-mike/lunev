@@ -26,7 +26,7 @@ void runTest ()
 
 void testAddInTree ()
 {
-    BinTree* tree = createTree ();
+    BinTree_t* tree = createTree ();
     changeNumberIncrease (tree, 1);
 
     int ret = 0;
@@ -67,7 +67,7 @@ void testAddInTree ()
 
 void testDel ()
 {
-    BinTree* tree = NULL;
+    BinTree_t* tree = NULL;
     delTree (tree);
 
     if (delTree (NULL) != -1)
@@ -77,7 +77,7 @@ void testDel ()
 
 void testCreate ()
 {
-    BinTree* tree = NULL;
+    BinTree_t* tree = NULL;
 
     // int ret = createTree (NULL);
     // if (ret != -1)
@@ -93,18 +93,18 @@ void testCreate ()
 
 void testChangeNumberIncrease ()
 {
-    BinTree* tree = createTree ();
+    BinTree_t* tree = createTree ();
     changeNumberIncrease (tree, 0);
     changeNumberIncrease (NULL, 0);
     delTree (tree);
     TEST_PASSED;
 }
 
-void emptyFunc (BinTree* tree, int index, void* data) {}
+void emptyFunc (BinTree_t* tree, int index, void* data) {}
 
 void testForEachTree ()
 {
-    BinTree* tree = createTree ();
+    BinTree_t* tree = createTree ();
     for (int i = 0; i < 2; i++)
     {
         addInTree (tree, i);
@@ -126,7 +126,7 @@ void testForEachTree ()
 
 void testDelInTreeByData ()
 {
-    BinTree* tree = createTree ();
+    BinTree_t* tree = createTree ();
     addInTree (tree, 10);
     addInTree (tree, 7);
     addInTree (tree, 12);
