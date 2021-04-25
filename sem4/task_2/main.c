@@ -10,7 +10,12 @@ int main (int argc, const char* argv[])
     }
 
     int64_t num_threads = GetNumber (argv[1]);
-    printf ("Num threads = %ld", num_threads);
+    if (num_threads == ERROR)
+    {
+        PRINT_ERROR("not valid num of threads!");
+        return -1;
+    }
+    printf ("Num threads = %ld\n", num_threads);
 
     StartCalculation (num_threads);
 }
