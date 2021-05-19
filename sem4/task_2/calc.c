@@ -2,7 +2,7 @@
 
 static const double c_start = 1;
 static const double c_step  = 0.0000001;
-static const double c_end   = 200;
+static const double c_end   = 100;
 
 static const char* PATH_CACHE_LINE_SIZE = \
     "/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size";
